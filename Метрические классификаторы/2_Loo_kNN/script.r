@@ -4,6 +4,7 @@ dist = function(u, v) {
   sqrt(sum((u[1:features]-v[1:features])^2))
 }
 
+
 distances = function(obj, data, metric) { 
   cases = dim(data)[1]
   dists = matrix(0, cases, 2)
