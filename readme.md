@@ -12,8 +12,10 @@
   - ["Наивный" байесовский классификатор](#"Наивный"-байесовский-классификатор)
   - [Нормальный дискриминантный анализ](#Нормальный-дискриминантный-анализ)
   - [Подстановочный алгоритм (Plug-in)](#Подстановочный-алгоритм-plug-in)
-   - [Линейный дискриминант Фишера (ЛДФ)](#Линейный-дискриминант-Фишера-ЛДФ)
+  - [Линейный дискриминант Фишера (ЛДФ)](#Линейный-дискриминант-Фишера-ЛДФ)
 - [Линейные классификаторы](#Линейные-классификаторы)
+  - [Метод стохастического градиента](#Метод-стохастического-градиента)
+  - [Логистическая регрессия](#Логистическая-регрессия)
   
 # Метрические алгоритмы классификации
 **Метрические методы обучения** -- методы, основанные на анализе сходства объектов.
@@ -723,4 +725,113 @@ ldf = function(x, classes, probs, mus, covinv, covdet) {
 
 ![](https://latex.codecogs.com/gif.latex?x%5Ej%20%3D%20%5Cfrac%7Bx%5Ej%20-%20x_%7Bmean%7D%5Ej%7D%7Bx%5Ej_%7Bsd%7D%7D)
 
-В зависимости от функции потерь *L* в функционале эмпирического риска *Q* существуют разнообразные **линейные алгоритмы классификации**. 
+В зависимости от функции потерь *L* в функционале эмпирического риска *Q* существуют разнообразные **линейные алгоритмы классификации**.
+
+Для минимизации
+![](http://latex.codecogs.com/svg.latex?Q%28w%29)
+применяется __метод градиентного спуска__.
+
+В начале выбирается некоторое _начальное приближение вектора весов_ _w_.
+Не существует единого способа инициализации весов. Хорошей практикой считается
+инициализировать веса случайными малыми значениями:
+![](http://latex.codecogs.com/svg.latex?w_j%3A%3D%5Ctext%7Brandom%7D%28-%5Cfrac%7B1%7D%7B2n%7D%2C&plus;%5Cfrac%7B1%7D%7B2n%7D%29)
+, где _n_ – количество признаков _x_.
+
+Далее высчитывается _текущая оценка функционала_
+![](http://latex.codecogs.com/svg.latex?Q%3A%3D%5Csum_%7Bi%3D1%7D%5E%7B%5Cell%7D%5Cmathcal%7BL%7D%28%5Clangle%20w%2Cx_i%20%5Crangle%20y_i%29)
+
+Затем запускается итерационный процесс, на каждом шаге которого вектор _w_
+изменяется в сторону наиболее быстрого убывания _Q_. Это направление противоположно
+вектору градиента
+![](http://latex.codecogs.com/svg.latex?Q%27%28w%29). Соответственно веса меняются по
+правилу:
+
+![](http://latex.codecogs.com/svg.latex?w%3A%3Dw-%5Ceta%20Q%27%28w%29)
+
+или
+
+![](http://latex.codecogs.com/svg.latex?w%3A%3Dw-%5Ceta%5Csum_%7Bi%3D1%7D%5E%7B%5Cell%7D%5Cmathcal%7BL%7D%27%28%5Clangle%20w%2Cx_i%20%5Crangle%20y_i%29x_iy_i),
+
+где
+![](http://latex.codecogs.com/svg.latex?%5Ceta%3E0)
+– __темп обучения__. Чтобы не проскочить локальный минимум темп обучания принято
+полагать небольшим. Однако, при слишком маленьком его значении алгоритм будет
+медленно сходится. Хорошей практикой считается его постепенное уменьшение по ходу
+итераций. Мы же будем полагать его равным
+![](http://latex.codecogs.com/svg.latex?%5Cfrac%7B1%7D%7B%5Ctext%7Biteration%7D%7D).
+
+Посмотрим реализацию: 
+
+```
+minimize = function(f,g,y,x,w,maxiter=100,nu=0.01,callback=callback) {
+  l = dim(x)[1]
+  for (iter in 1:maxiter) {
+    w = w - nu * g(y,x,w,sample(1:l,1))
+    print(sprintf("%d %f", iter, f(y,x,w)))
+    callback(w)
+  }
+  w
+}
+
+```
+
+#### Логистическая регрессия
+
+Является __оптимальный байесовским классификатором.
+
+Имеет _логистическую функцию потерь_
+![](http://latex.codecogs.com/svg.latex?%5Cmathcal%7BL%7D%28M%29%20%3D%20%5Clog_2%281%20&plus;%20e%5E%7B-M%7D%29)
+и _логистическое_ правило обновления весов
+![](http://latex.codecogs.com/svg.latex?w%20%3A%3D%20w&plus;%5Ceta%20y_ix_i%5Csigma%28-%5Clangle%20w%2Cx_i%20%5Crangle%20y_i%29)
+, где
+![](http://latex.codecogs.com/svg.latex?%5Csigma%28z%29%3D%5Cfrac%7B1%7D%7B1&plus;e%5E%7B-z%7D%7D)
+– _сигмоидная функция_.
+
+Испульзуем метод градиентного спуска, написанный ранее. Используем “Bias Trick” для обучения параметра w0.
+
+Напомним что количество очков, даваемое классу, определяется как:
+
+![](https://github.com/BalitskayaNastya/Machine_learning_BalitskayaNastya/blob/master/Линейные%20классификаторы/LogisticRegression/формула1.PNG)
+
+Тогда создадим вектор
+
+![](https://github.com/BalitskayaNastya/Machine_learning_BalitskayaNastya/blob/master/Линейные%20классификаторы/LogisticRegression/формула3.PNG)
+
+И обучим с решающим правилом:
+
+![](https://github.com/BalitskayaNastya/Machine_learning_BalitskayaNastya/blob/master/Линейные%20классификаторы/LogisticRegression/формула4.PNG)
+
+Тогда в итоге получим:
+
+![](https://github.com/BalitskayaNastya/Machine_learning_BalitskayaNastya/blob/master/Линейные%20классификаторы/LogisticRegression/формула5.PNG)
+
+Обучив параметры w, можно написать решающее правило:
+
+```
+class = function(w,x) {
+  sign(sum(w*x))
+}
+
+a = function(w, x) {
+  x[n+1] = 1
+  c = class(w,x)
+  if (c == 1) {
+    return(1)
+  } else {
+    return(2)
+  }
+}
+
+```
+
+Построим карту классификации:
+
+![](https://github.com/BalitskayaNastya/Machine_learning_BalitskayaNastya/blob/master/Линейные%20классификаторы/LogisticRegression/map.png)
+
+Построим разделяющие прямые во время обучения:
+
+![](https://github.com/BalitskayaNastya/Machine_learning_BalitskayaNastya/blob/master/Линейные%20классификаторы/LogisticRegression/lines.png)
+
+Циановые прямые – это прямые на более поздних итерациях градиентного спуска.
+
+Выводы:	Логистическая регрессия – хороший алгоритм.
