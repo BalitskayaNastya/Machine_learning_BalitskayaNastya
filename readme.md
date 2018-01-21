@@ -113,6 +113,7 @@ for (i in 1:dim(points)[1]) {
   points(pt[1], pt[2], col=colors[kNN(pt, selected, 7)], pch=19) 
 }
 ```
-
+Вот что получилось:
+![alt text](https://github.com/BalitskayaNastya/Machine_learning_BalitskayaNastya/blob/master/Метрические%20классификаторы/1_NN_kNN/результат%20рисунки.png)
 
 
